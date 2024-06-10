@@ -47,13 +47,29 @@ class Parser:
             node = (token, node, self.factor())
         return node
 
-    def expression(self):
+    def relation(self):
         node = self.term()
+        while self.current_token.type == 'REL_OP':
+            token = self.current_token
+            self.eat('REL_OP')
+            node = (token, node, self.term())
+        return node
+
+    def logical_expr(self):
+        node = self.relation()
+        while self.current_token.type == 'KEYWORD' and self.current_token.value in ('and', 'or'):
+            token = self.current_token
+            self.eat('KEYWORD')
+            node = (token, node, self.relation())
+        return node
+
+    def expression(self):
+        node = self.logical_expr()
         while self.current_token.type in ('OP', 'ADD', 'SUB'):
             token = self.current_token
             if token.type == 'OP':
                 self.eat('OP')
-            node = (token, node, self.term())
+            node = (token, node, self.logical_expr())
         return node
 
     def assignment(self):
@@ -70,19 +86,19 @@ class Parser:
                 return self.if_statement()
             elif self.current_token.value == 'while':
                 return self.while_statement()
-        elif self.current_token.type == 'IDENT':
-            return self.assignment()
+            elif self.current_token.value == 'let':
+                return self.assignment()
         self.error('Invalid statement')
 
     def if_statement(self):
         self.eat('KEYWORD')  # 'if'
         condition = self.expression()
         self.eat('KEYWORD')  # 'then'
-        true_branch = self.statement()
+        true_branch = self.statement_sequence()
         false_branch = None
         if self.current_token.value == 'else':
             self.eat('KEYWORD')  # 'else'
-            false_branch = self.statement()
+            false_branch = self.statement_sequence()
         self.eat('KEYWORD')  # 'fi'
         return ('IF', condition, true_branch, false_branch)
 
@@ -90,12 +106,20 @@ class Parser:
         self.eat('KEYWORD')  # 'while'
         condition = self.expression()
         self.eat('KEYWORD')  # 'do'
-        body = self.statement()
+        body = self.statement_sequence()
         self.eat('KEYWORD')  # 'od'
         return ('WHILE', condition, body)
 
+    def statement_sequence(self):
+        statements = []
+        while self.current_token.type not in ('EOF', 'KEYWORD') or (self.current_token.type == 'KEYWORD' and self.current_token.value not in ('else', 'fi', 'od')):
+            statements.append(self.statement())
+            if self.current_token.type == 'SEMICOLON':
+                self.eat('SEMICOLON')
+        return statements
+
     def parse(self):
-        return self.statement()
+        return self.statement_sequence()
 
 if __name__ == '__main__':
     code = """
@@ -107,3 +131,4 @@ if __name__ == '__main__':
     parser = Parser(tokens)
     result = parser.parse()
     print(result)
+

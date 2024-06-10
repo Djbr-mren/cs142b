@@ -21,7 +21,7 @@ class Token:
 class Tokenizer:
     TOKEN_SPECIFICATION = [
         ('NUMBER', r'\d+'),
-        ('KEYWORD', r'\b(if|then|else|fi|while|do|od|and|or|not)\b'),
+        ('KEYWORD', r'\b(if|then|else|fi|while|do|od|and|or|not|let|call|return)\b'),
         ('IDENT', r'[a-zA-Z_][a-zA-Z_0-9]*'),
         ('OP', r'[+\-*/]'),
         ('ASSIGN', r'<-'),

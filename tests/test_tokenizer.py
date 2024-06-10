@@ -11,7 +11,7 @@ class TestTokenizer(unittest.TestCase):
         tokenizer = Tokenizer(code)
         tokens = tokenizer.tokenize()
         expected_tokens = [
-            Token('IDENT', 'let', 1, 1),
+            Token('KEYWORD', 'let', 1, 1),
             Token('IDENT', 'x', 1, 5),
             Token('ASSIGN', '<-', 1, 7),
             Token('NUMBER', '5', 1, 10),
