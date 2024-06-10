@@ -1,5 +1,3 @@
-# src/tokenizer.py
-
 import re
 
 
@@ -23,6 +21,7 @@ class Token:
 class Tokenizer:
     TOKEN_SPECIFICATION = [
         ('NUMBER', r'\d+'),
+        ('KEYWORD', r'\b(if|then|else|fi|while|do|od|and|or|not)\b'),
         ('IDENT', r'[a-zA-Z_][a-zA-Z_0-9]*'),
         ('OP', r'[+\-*/]'),
         ('ASSIGN', r'<-'),
@@ -52,10 +51,10 @@ class Tokenizer:
             if kind == 'NEWLINE':
                 line += 1
                 column = 1
-            elif kind != 'WHITESPACE':
-                self.tokens.append(Token(kind, value, line, column))
+            elif kind == 'WHITESPACE':
                 column += len(value)
             else:
+                self.tokens.append(Token(kind, value, line, column))
                 column += len(value)
         return self.tokens
 
