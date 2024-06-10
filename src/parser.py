@@ -1,3 +1,5 @@
+# src/parser.py
+
 from tokenizer import Tokenizer, Token
 
 class Parser:
@@ -81,6 +83,7 @@ class Parser:
         return ('ASSIGN', var, expr)
 
     def statement(self):
+        print(f'Parsing statement: {self.current_token}')
         if self.current_token.type == 'KEYWORD':
             if self.current_token.value == 'if':
                 return self.if_statement()
@@ -113,6 +116,7 @@ class Parser:
     def statement_sequence(self):
         statements = []
         while self.current_token.type not in ('EOF', 'KEYWORD') or (self.current_token.type == 'KEYWORD' and self.current_token.value not in ('else', 'fi', 'od')):
+            print(f'Parsing statement in sequence: {self.current_token}')
             statements.append(self.statement())
             if self.current_token.type == 'SEMICOLON':
                 self.eat('SEMICOLON')
@@ -131,4 +135,3 @@ if __name__ == '__main__':
     parser = Parser(tokens)
     result = parser.parse()
     print(result)
-
