@@ -33,18 +33,17 @@ class IRGenerator:
         pass
 
     def visit_assignment(self, node):
+        expr_result = self.visit(node.expr)
         self.current_block.instructions.append(
-            Instruction('assign', node.var, self.visit(node.expr))
+            Instruction('assign', node.var, expr_result)
         )
 
     def visit_if_statement(self, node):
-        cond = self.visit(node.condition)
+        cond_value = self.visit_expression(node.condition)
         true_block = self.new_block()
         false_block = self.new_block()
         end_block = self.new_block()
 
-        # Evaluate the condition first
-        cond_value = self.visit_expression(node.condition)
         self.current_block.instructions.append(Instruction('br', cond_value, true_block.label, false_block.label))
 
         self.current_block = true_block
@@ -87,7 +86,10 @@ class IRGenerator:
         self.current_block.instructions.append(func_call)
 
     def visit_function_call(self, node):
-        return Instruction('call', node.func_name, *[self.visit(arg) for arg in node.args])
+        call_instr = Instruction('call', node.func_name, *[self.visit(arg) for arg in node.args])
+        temp_var = f"t{self.block_counter}"
+        self.current_block.instructions.append(call_instr)
+        return temp_var
 
     def visit_expression(self, node):
         left = self.visit(node.left) if not isinstance(node.left, (str, int)) else node.left
@@ -109,7 +111,7 @@ class IRGenerator:
         elif isinstance(node, ReturnStatement):
             self.visit_return_statement(node)
         elif isinstance(node, FunctionCall):
-            self.visit_function_call_statement(node)
+            return self.visit_function_call(node)
         elif isinstance(node, Expression):
             return self.visit_expression(node)
         elif isinstance(node, (str, int)):
