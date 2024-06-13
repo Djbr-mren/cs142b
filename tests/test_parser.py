@@ -1,11 +1,12 @@
-# tests/test_parser.py
-
 import unittest
 from tokenizer import Tokenizer
-from parser import Parser
+from parser import Parser, Program, Declaration, Assignment, IfStatement, FunctionCall, Expression
 
 
 class TestParser(unittest.TestCase):
+
+    def setUp(self):
+        self.maxDiff = None
 
     def test_parse(self):
         code = """
@@ -24,17 +25,17 @@ class TestParser(unittest.TestCase):
         tokens = tokenizer.tokenize()
         parser = Parser(tokens)
         result = parser.parse()
-        expected_result = (
-            'PROGRAM',
-            [('IDENT', 'x', 3, 13)],
-            [
-                ('ASSIGN', ('IDENT', 'x', 5, 17), ('CALL', ('IDENT', 'InputNum', 5, 25), [])),
-                ('IF',
-                 ('==', ('IDENT', 'x', 6, 12), ('NUMBER', '1', 6, 17)),
-                 [('ASSIGN', ('IDENT', 'x', 7, 17), ('NUMBER', '1', 7, 23))],
-                 [('ASSIGN', ('IDENT', 'x', 9, 17), ('NUMBER', '2', 9, 23))]
-                 ),
-                ('CALL', ('IDENT', 'OutputNum', 11, 13), [('IDENT', 'x', 11, 23)])
+
+        expected_result = Program(
+            declarations = [Declaration(var = 'x')],
+            statements = [
+                Assignment(var = 'x', expr = FunctionCall(func_name = 'InputNum', args = [])),
+                IfStatement(
+                    condition = Expression(left = 'x', op = '==', right = '1'),
+                    true_branch = [Assignment(var = 'x', expr = '1')],
+                    false_branch = [Assignment(var = 'x', expr = '2')]
+                ),
+                FunctionCall(func_name = 'OutputNum', args = ['x'])
             ]
         )
         self.assertEqual(result, expected_result)
