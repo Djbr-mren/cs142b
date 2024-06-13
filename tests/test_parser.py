@@ -9,30 +9,34 @@ class TestParser(unittest.TestCase):
 
     def test_parse(self):
         code = """
-        if x <= 5 and x != 10 then y <- 10;
-        while x >= 100 do x <- x + 1 od;
+        main
+        var x; {
+            let x <- call InputNum();
+            if x == 1 then
+                let x <- 1
+            else
+                let x <- 2
+            fi;
+            call OutputNum(x)
+        }.
         """
         tokenizer = Tokenizer(code)
         tokens = tokenizer.tokenize()
         parser = Parser(tokens)
         result = parser.parse()
-        expected_result = [
-            (
-                'IF',
-                ('and',
-                 ('<=', ('IDENT', 'x', 2, 8), ('NUMBER', '5', 2, 13)),
-                 ('!=', ('IDENT', 'x', 2, 19), ('NUMBER', '10', 2, 24))
+        expected_result = (
+            'PROGRAM',
+            [('IDENT', 'x', 3, 13)],
+            [
+                ('ASSIGN', ('IDENT', 'x', 5, 17), ('CALL', ('IDENT', 'InputNum', 5, 25), [])),
+                ('IF',
+                 ('==', ('IDENT', 'x', 6, 12), ('NUMBER', '1', 6, 17)),
+                 [('ASSIGN', ('IDENT', 'x', 7, 17), ('NUMBER', '1', 7, 23))],
+                 [('ASSIGN', ('IDENT', 'x', 9, 17), ('NUMBER', '2', 9, 23))]
                  ),
-                [('ASSIGN', ('IDENT', 'y', 2, 28), ('NUMBER', '10', 2, 33))],
-                None
-            ),
-            (
-                'WHILE',
-                ('>=', ('IDENT', 'x', 3, 7), ('NUMBER', '100', 3, 12)),
-                [('ASSIGN', ('IDENT', 'x', 3, 19),
-                  ('+', ('IDENT', 'x', 3, 24), ('NUMBER', '1', 3, 28)))]
-            )
-        ]
+                ('CALL', ('IDENT', 'OutputNum', 11, 13), [('IDENT', 'x', 11, 23)])
+            ]
+        )
         self.assertEqual(result, expected_result)
 
 
