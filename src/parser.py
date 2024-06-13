@@ -1,4 +1,4 @@
-from tokenizer import Tokenizer, Token
+from tokenizer import Tokenizer
 
 class Node:
     pass
@@ -35,6 +35,21 @@ class IfStatement(Node):
     def __repr__(self):
         return f"IfStatement(condition={self.condition}, true_branch={self.true_branch}, false_branch={self.false_branch})"
 
+class WhileStatement(Node):
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
+    def __repr__(self):
+        return f"WhileStatement(condition={self.condition}, body={self.body})"
+
+class ReturnStatement(Node):
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"ReturnStatement(expr={self.expr})"
+
 class FunctionCall(Node):
     def __init__(self, func_name, args):
         self.func_name = func_name
@@ -51,9 +66,9 @@ class Expression(Node):
 
     def __repr__(self):
         if self.op:
-            return f"Expression({self.left} {self.op} {self.right})"
+            return f"Expression(left={self.left}, op={self.op}, right={self.right})"
         else:
-            return f"Expression({self.left})"
+            return f"Expression(value={self.left})"
 
 class Parser:
     def __init__(self, tokens):
@@ -94,14 +109,15 @@ class Parser:
         declarations = []
         while self.current_token and self.current_token.type == 'KEYWORD' and self.current_token.value == 'var':
             self.eat('KEYWORD')
-            declarations.append(self.declaration())
+            while self.current_token.type == 'IDENT':
+                var = self.current_token.value
+                self.eat('IDENT')
+                if self.current_token.type == 'COMMA':
+                    self.eat('COMMA')
+                else:
+                    break
+            self.eat('SEMICOLON')
         return declarations
-
-    def declaration(self):
-        var = self.current_token.value
-        self.eat('IDENT')
-        self.eat('SEMICOLON')
-        return Declaration(var)
 
     def statement_sequence(self):
         statements = []
@@ -121,10 +137,12 @@ class Parser:
                 return self.function_call_statement()
             elif self.current_token.value == 'while':
                 return self.while_statement()
+            elif self.current_token.value == 'return':
+                return self.return_statement()
         self.error(f"Invalid statement: {self.current_token}")
 
     def assignment(self):
-        self.eat('KEYWORD')
+        self.eat('KEYWORD')  # 'let'
         var = self.current_token.value
         self.eat('IDENT')
         self.eat('ASSIGN')
@@ -132,8 +150,8 @@ class Parser:
         return Assignment(var, expr)
 
     def if_statement(self):
-        self.eat('KEYWORD')
-        condition = self.expression()
+        self.eat('KEYWORD')  # 'if'
+        condition = self.relation()
         self.eat('KEYWORD')  # 'then'
         true_branch = self.statement_sequence()
         false_branch = []
@@ -144,40 +162,57 @@ class Parser:
         return IfStatement(condition, true_branch, false_branch)
 
     def while_statement(self):
-        self.eat('KEYWORD')
-        condition = self.expression()
+        self.eat('KEYWORD')  # 'while'
+        condition = self.relation()
         self.eat('KEYWORD')  # 'do'
         body = self.statement_sequence()
         self.eat('KEYWORD')  # 'od'
         return WhileStatement(condition, body)
 
+    def return_statement(self):
+        self.eat('KEYWORD')  # 'return'
+        expr = None
+        if self.current_token.type != 'SEMICOLON':
+            expr = self.expression()
+        return ReturnStatement(expr)
+
     def function_call_statement(self):
         func_call = self.function_call()
-        return FunctionCall(func_call.func_name, func_call.args)
+        return func_call
 
     def function_call(self):
-        self.eat('KEYWORD')
+        self.eat('KEYWORD')  # 'call'
         func_name = self.current_token.value
         self.eat('IDENT')
         self.eat('LPAREN')
         args = []
-        while self.current_token.type != 'RPAREN':
+        if self.current_token.type != 'RPAREN':
             args.append(self.expression())
-            if self.current_token.type == 'COMMA':
+            while self.current_token.type == 'COMMA':
                 self.eat('COMMA')
+                args.append(self.expression())
         self.eat('RPAREN')
         return FunctionCall(func_name, args)
 
     def expression(self):
         left = self.term()
-        while self.current_token and self.current_token.type in ('OP', 'REL_OP'):
+        while self.current_token and self.current_token.type == 'OP':
             op = self.current_token.value
-            self.eat(self.current_token.type)
+            self.eat('OP')
             right = self.term()
             left = Expression(left, op, right)
         return left
 
     def term(self):
+        left = self.factor()
+        while self.current_token and self.current_token.type in ('MUL', 'DIV'):
+            op = self.current_token.value
+            self.eat(self.current_token.type)
+            right = self.factor()
+            left = Expression(left, op, right)
+        return left
+
+    def factor(self):
         token = self.current_token
         if token.type == 'IDENT':
             self.eat('IDENT')
@@ -193,9 +228,19 @@ class Parser:
         elif token.type == 'KEYWORD' and token.value == 'call':
             return self.function_call()
         else:
-            self.error(f"Invalid term: {self.current_token}")
+            self.error(f"Invalid factor: {token}")
 
-if __name__ == "__main__":
+    def relation(self):
+        left = self.expression()
+        if self.current_token.type == 'REL_OP':
+            op = self.current_token.value
+            self.eat('REL_OP')
+            right = self.expression()
+            return Expression(left, op, right)
+        else:
+            self.error(f"Invalid relation: {self.current_token}")
+
+if __name__ == '__main__':
     code = """
     main
     var x; {
@@ -213,4 +258,3 @@ if __name__ == "__main__":
     parser = Parser(tokens)
     result = parser.parse()
     print(result)
-
