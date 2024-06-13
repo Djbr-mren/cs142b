@@ -4,20 +4,19 @@ class Node:
     pass
 
 class Program(Node):
-    def __init__(self, declarations, functions, statements):
+    def __init__(self, declarations, statements):
         self.declarations = declarations
-        self.functions = functions
         self.statements = statements
 
     def __repr__(self):
-        return f"Program(declarations={self.declarations}, functions={self.functions}, statements={self.statements})"
+        return f"Program(declarations={self.declarations}, statements={self.statements})"
 
 class Declaration(Node):
     def __init__(self, var):
         self.var = var
 
     def __repr__(self):
-        return f"Declaration(var={self.var})"
+        return f"Declaration(var='{self.var}')"
 
 class Assignment(Node):
     def __init__(self, var, expr):
@@ -25,7 +24,7 @@ class Assignment(Node):
         self.expr = expr
 
     def __repr__(self):
-        return f"Assignment(var={self.var}, expr={self.expr})"
+        return f"Assignment(var='{self.var}', expr={self.expr})"
 
 class IfStatement(Node):
     def __init__(self, condition, true_branch, false_branch):
@@ -57,16 +56,8 @@ class FunctionCall(Node):
         self.args = args
 
     def __repr__(self):
-        return f"FunctionCall(func_name={self.func_name}, args={self.args})"
-
-class FunctionDeclaration(Node):
-    def __init__(self, name, params, body):
-        self.name = name
-        self.params = params
-        self.body = body
-
-    def __repr__(self):
-        return f"FunctionDeclaration(name={self.name}, params={self.params}, body={self.body})"
+        args_repr = ', '.join(repr(arg) for arg in self.args)
+        return f"FunctionCall(func_name={self.func_name}, args=[{args_repr}])"
 
 class Expression(Node):
     def __init__(self, left, op=None, right=None):
@@ -76,7 +67,7 @@ class Expression(Node):
 
     def __repr__(self):
         if self.op:
-            return f"Expression(left={self.left}, op={self.op}, right={self.right})"
+            return f"Expression(left={repr(self.left)}, op={self.op}, right={repr(self.right)})"
         else:
             return f"Expression(value={self.left})"
 
@@ -107,14 +98,13 @@ class Parser:
         return self.program()
 
     def program(self):
-        declarations = self.declarations()
-        functions = self.functions()
         self.eat('KEYWORD')  # 'main'
+        declarations = self.declarations()
         self.eat('LBRACE')
         statements = self.statement_sequence()
         self.eat('RBRACE')
         self.eat('END')
-        return Program(declarations, functions, statements)
+        return Program(declarations, statements)
 
     def declarations(self):
         declarations = []
@@ -122,20 +112,14 @@ class Parser:
             self.eat('KEYWORD')
             while self.current_token.type == 'IDENT':
                 var = self.current_token.value
+                declarations.append(Declaration(var))
                 self.eat('IDENT')
                 if self.current_token.type == 'COMMA':
                     self.eat('COMMA')
                 else:
                     break
             self.eat('SEMICOLON')
-            declarations.append(Declaration(var))
         return declarations
-
-    def functions(self):
-        functions = []
-        while self.current_token and self.current_token.type == 'KEYWORD' and self.current_token.value == 'function':
-            functions.append(self.function_declaration())
-        return functions
 
     def statement_sequence(self):
         statements = []
@@ -157,8 +141,6 @@ class Parser:
                 return self.while_statement()
             elif self.current_token.value == 'return':
                 return self.return_statement()
-            elif self.current_token.value == 'function':
-                return self.function_declaration()
         self.error(f"Invalid statement: {self.current_token}")
 
     def assignment(self):
@@ -214,76 +196,6 @@ class Parser:
         self.eat('RPAREN')
         return FunctionCall(func_name, args)
 
-    def function_declaration(self):
-        self.eat('KEYWORD')  # 'function'
-        name = self.current_token.value
-        self.eat('IDENT')
-        params = self.formal_params()
-        self.eat('SEMICOLON')
-        body = self.func_body()
-        self.eat('SEMICOLON')
-        return FunctionDeclaration(name, params, body)
-
-    def formal_params(self):
-        params = []
-        self.eat('LPAREN')
-        if self.current_token.type != 'RPAREN':
-            params.append(self.current_token.value)
-            self.eat('IDENT')
-            while self.current_token.type == 'COMMA':
-                self.eat('COMMA')
-                params.append(self.current_token.value)
-                self.eat('IDENT')
-        self.eat('RPAREN')
-        return params
-
-    def func_body(self):
-        var_decls = []
-        if self.current_token.type == 'KEYWORD' and self.current_token.value == 'var':
-            var_decls = self.parse_var_decls()
-        self.eat('LBRACE')
-        statements = self.parse_stat_sequence()
-        self.eat('RBRACE')
-        return var_decls, statements
-
-    def parse_var_decls(self):
-        var_decls = []
-        self.eat('KEYWORD')  # 'var'
-        var_decls.append(self.current_token.value)
-        self.eat('IDENT')
-        while self.current_token.type == 'COMMA':
-            self.eat('COMMA')
-            var_decls.append(self.current_token.value)
-            self.eat('IDENT')
-        self.eat('SEMICOLON')
-        return var_decls
-
-    def parse_stat_sequence(self):
-        statements = []
-        statements.append(self.parse_statement())
-        while self.current_token.type == 'SEMICOLON':
-            self.eat('SEMICOLON')
-            if self.current_token.type == 'RBRACE':
-                break
-            statements.append(self.parse_statement())
-        return statements
-
-    def parse_statement(self):
-        if self.current_token.type == 'KEYWORD':
-            if self.current_token.value == 'let':
-                return self.assignment()
-            elif self.current_token.value == 'if':
-                return self.if_statement()
-            elif self.current_token.value == 'call':
-                return self.function_call_statement()
-            elif self.current_token.value == 'while':
-                return self.while_statement()
-            elif self.current_token.value == 'return':
-                return self.return_statement()
-            elif self.current_token.value == 'function':
-                return self.function_declaration()
-        self.error(f"Invalid statement: {self.current_token}")
-
     def expression(self):
         left = self.term()
         while self.current_token and self.current_token.type == 'OP':
@@ -332,13 +244,14 @@ class Parser:
 
 if __name__ == '__main__':
     code = """
-    function foo(a, b) {
-        let c <- a + b;
-        return c
-    };
     main
     var x; {
-        let x <- call foo(1, 2);
+        let x <- call InputNum();
+        if x == 1 then
+            let x <- 1
+        else
+            let x <- 2
+        fi;
         call OutputNum(x)
     }.
     """
