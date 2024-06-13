@@ -41,28 +41,28 @@ class IRGenerator:
     def visit_assignment(self, node):
         expr_result = self.visit(node.expr)
         self.current_block.instructions.append(
-            Instruction('assign', node.var, expr_result)
+            Instruction('assign', (node.var, expr_result))
         )
 
     def visit_if_statement(self, node):
         cond_value = self.visit_expression(node.condition)
         cond_temp = self.new_temp()
-        self.current_block.instructions.append(Instruction('assign', cond_temp, cond_value))
+        self.current_block.instructions.append(Instruction('assign', (cond_temp, cond_value)))
         true_block = self.new_block()
         false_block = self.new_block()
         end_block = self.new_block()
 
-        self.current_block.instructions.append(Instruction('br', cond_temp, true_block.label, false_block.label))
+        self.current_block.instructions.append(Instruction('br', (cond_temp, true_block.label, false_block.label)))
 
         self.current_block = true_block
         for stmt in node.true_branch:
             self.visit(stmt)
-        self.current_block.instructions.append(Instruction('jmp', end_block.label))
+        self.current_block.instructions.append(Instruction('jmp', (end_block.label,)))
 
         self.current_block = false_block
         for stmt in node.false_branch:
             self.visit(stmt)
-        self.current_block.instructions.append(Instruction('jmp', end_block.label))
+        self.current_block.instructions.append(Instruction('jmp', (end_block.label,)))
 
         self.current_block = end_block
 
@@ -71,40 +71,38 @@ class IRGenerator:
         body_block = self.new_block()
         end_block = self.new_block()
 
-        self.current_block.instructions.append(Instruction('jmp', cond_block.label))
+        self.current_block.instructions.append(Instruction('jmp', (cond_block.label,)))
 
         self.current_block = cond_block
         cond = self.visit(node.condition)
-        self.current_block.instructions.append(Instruction('br', cond, body_block.label, end_block.label))
+        self.current_block.instructions.append(Instruction('br', (cond, body_block.label, end_block.label)))
 
         self.current_block = body_block
         for stmt in node.body:
             self.visit(stmt)
-        self.current_block.instructions.append(Instruction('jmp', cond_block.label))
+        self.current_block.instructions.append(Instruction('jmp', (cond_block.label,)))
 
         self.current_block = end_block
 
     def visit_return_statement(self, node):
         self.current_block.instructions.append(
-            Instruction('ret', self.visit(node.expr) if node.expr else None)
+            Instruction('ret', (self.visit(node.expr) if node.expr else None,))
         )
 
     def visit_function_call_statement(self, node):
-        func_call = self.visit_function_call(node)
-        self.current_block.instructions.append(func_call)
+        self.visit_function_call(node)
 
     def visit_function_call(self, node):
-        call_instr = Instruction('call', node.func_name, *[self.visit(arg) for arg in node.args])
+        call_instr = Instruction('call', (node.func_name,) + tuple(self.visit(arg) for arg in node.args))
         self.current_block.instructions.append(call_instr)
-        temp_var = self.new_temp()
-        return temp_var
+        return call_instr
 
     def visit_expression(self, node):
         left = self.visit(node.left) if not isinstance(node.left, (str, int)) else node.left
         right = self.visit(node.right) if node.right and not isinstance(node.right, (str, int)) else node.right
         if node.op:
             temp_var = self.new_temp()
-            self.current_block.instructions.append(Instruction('assign', temp_var, Instruction(node.op, left, right)))
+            self.current_block.instructions.append(Instruction('assign', (temp_var, Instruction(node.op, (left, right)))))
             return temp_var
         else:
             return node.left
@@ -152,3 +150,4 @@ if __name__ == '__main__':
     ir_generator = IRGenerator()
     ir = ir_generator.generate(ast)
     print(ir)
+
