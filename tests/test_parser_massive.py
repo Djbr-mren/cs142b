@@ -14,7 +14,7 @@ class TestParserMassive(unittest.TestCase):
                     let x <- x + y
                 }.
                 """,
-                "expected": "Program(declarations=[Declaration(var=x), Declaration(var=y)], statements=[Assignment(var=x, expr=1), Assignment(var=y, expr=1), Assignment(var=x, expr=Expression(left=x, op=+, right=y))])"
+                "expected": "Program(declarations=[Declaration(var='x'), Declaration(var='y')], statements=[Assignment(var='x', expr=1), Assignment(var='y', expr=1), Assignment(var='x', expr=Expression(left='x', op=+, right='y'))])"
             },
             {
                 "input": """
@@ -24,7 +24,7 @@ class TestParserMassive(unittest.TestCase):
                     call OutputNum(x)
                 }.
                 """,
-                "expected": "Program(declarations=[Declaration(var=x)], statements=[Assignment(var=x, expr=Expression(left=Expression(left=Expression(left=1, op=+, right=1), op=+, right=1))), FunctionCall(func_name=OutputNum, args=[x])])"
+                "expected": "Program(declarations=[Declaration(var='x')], statements=[Assignment(var='x', expr=Expression(left=Expression(left=Expression(left=1, op=+, right=1), op=+, right=1))), FunctionCall(func_name=OutputNum, args=['x'])])"
             },
             {
                 "input": """
@@ -34,7 +34,7 @@ class TestParserMassive(unittest.TestCase):
                     call OutputNum(a)
                 }.
                 """,
-                "expected": "Program(declarations=[Declaration(var=a)], statements=[Assignment(var=a, expr=Expression(left=FunctionCall(func_name=InputNum, args=[]), op=+, right=FunctionCall(func_name=InputNum, args=[]))), FunctionCall(func_name=OutputNum, args=[a])])"
+                "expected": "Program(declarations=[Declaration(var='a')], statements=[Assignment(var='a', expr=Expression(left=FunctionCall(func_name=InputNum, args=[]), op=+, right=FunctionCall(func_name=InputNum, args=[]))), FunctionCall(func_name=OutputNum, args=['a'])])"
             },
             {
                 "input": """
@@ -44,7 +44,7 @@ class TestParserMassive(unittest.TestCase):
                     call OutputNum(a)
                 }.
                 """,
-                "expected": "Program(declarations=[Declaration(var=a)], statements=[Assignment(var=a, expr=Expression(left=FunctionCall(func_name=InputNum, args=[]), op=*, right=FunctionCall(func_name=InputNum, args=[]))), FunctionCall(func_name=OutputNum, args=[a])])"
+                "expected": "Program(declarations=[Declaration(var='a')], statements=[Assignment(var='a', expr=Expression(left=FunctionCall(func_name=InputNum, args=[]), op=*, right=FunctionCall(func_name=InputNum, args=[]))), FunctionCall(func_name=OutputNum, args=['a'])])"
             },
             {
                 "input": """
@@ -59,7 +59,7 @@ class TestParserMassive(unittest.TestCase):
                     call OutputNum(x)
                 }.
                 """,
-                "expected": "Program(declarations=[Declaration(var=x)], statements=[Assignment(var=x, expr=FunctionCall(func_name=InputNum, args=[])), IfStatement(condition=Expression(left=x, op===, right=1), true_branch=[Assignment(var=x, expr=1)], false_branch=[Assignment(var=x, expr=2)]), FunctionCall(func_name=OutputNum, args=[x])])"
+                "expected": "Program(declarations=[Declaration(var='x')], statements=[Assignment(var='x', expr=FunctionCall(func_name=InputNum, args=[])), IfStatement(condition=Expression(left='x', op===, right=1), true_branch=[Assignment(var='x', expr=1)], false_branch=[Assignment(var='x', expr=2)]), FunctionCall(func_name=OutputNum, args=['x'])])"
             },
             # Add more test cases as needed...
         ]

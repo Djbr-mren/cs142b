@@ -56,8 +56,7 @@ class FunctionCall(Node):
         self.args = args
 
     def __repr__(self):
-        args_repr = ', '.join(repr(arg) for arg in self.args)
-        return f"FunctionCall(func_name={self.func_name}, args=[{args_repr}])"
+        return f"FunctionCall(func_name={self.func_name}, args={self.args})"
 
 class Expression(Node):
     def __init__(self, left, op=None, right=None):
@@ -67,7 +66,7 @@ class Expression(Node):
 
     def __repr__(self):
         if self.op:
-            return f"Expression(left={repr(self.left)}, op={self.op}, right={repr(self.right)})"
+            return f"Expression(left={self.left}, op={self.op}, right={self.right})"
         else:
             return f"Expression(value={self.left})"
 
@@ -112,8 +111,8 @@ class Parser:
             self.eat('KEYWORD')
             while self.current_token.type == 'IDENT':
                 var = self.current_token.value
-                declarations.append(Declaration(var))
                 self.eat('IDENT')
+                declarations.append(Declaration(var))
                 if self.current_token.type == 'COMMA':
                     self.eat('COMMA')
                 else:
