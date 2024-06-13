@@ -24,11 +24,13 @@ class IRGenerator:
 
     def visit_program(self, node):
         # Initialize the first basic block
-        self.new_block()
+        entry_block = self.new_block()
         for decl in node.declarations:
             self.visit(decl)
         for stmt in node.statements:
             self.visit(stmt)
+        # Add branch to the first statement
+        self.current_block.instructions.append(Instruction('br', 'entry', entry_block.label))
 
     def visit_declaration(self, node):
         # Declarations are handled separately, so we don't need to do anything here
@@ -45,6 +47,7 @@ class IRGenerator:
         false_block = self.new_block()
         end_block = self.new_block()
 
+        # Insert the branch instruction at the end of the current block
         self.current_block.instructions.append(Instruction('br', cond, true_block.label, false_block.label))
 
         self.current_block = true_block
