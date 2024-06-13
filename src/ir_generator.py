@@ -6,6 +6,7 @@ class IRGenerator:
         self.ir = IR()
         self.current_block = None
         self.block_counter = 0
+        self.temp_counter = 0
 
     def new_block(self):
         label = f"BB{self.block_counter}"
@@ -14,6 +15,11 @@ class IRGenerator:
         self.ir.basic_blocks.append(block)
         self.current_block = block
         return block
+
+    def new_temp(self):
+        temp_name = f"t{self.temp_counter}"
+        self.temp_counter += 1
+        return temp_name
 
     def generate(self, node):
         if isinstance(node, Program):
@@ -40,11 +46,13 @@ class IRGenerator:
 
     def visit_if_statement(self, node):
         cond_value = self.visit_expression(node.condition)
+        cond_temp = self.new_temp()
+        self.current_block.instructions.append(Instruction('assign', cond_temp, cond_value))
         true_block = self.new_block()
         false_block = self.new_block()
         end_block = self.new_block()
 
-        self.current_block.instructions.append(Instruction('br', cond_value, true_block.label, false_block.label))
+        self.current_block.instructions.append(Instruction('br', cond_temp, true_block.label, false_block.label))
 
         self.current_block = true_block
         for stmt in node.true_branch:
@@ -87,15 +95,17 @@ class IRGenerator:
 
     def visit_function_call(self, node):
         call_instr = Instruction('call', node.func_name, *[self.visit(arg) for arg in node.args])
-        temp_var = f"t{self.block_counter}"
         self.current_block.instructions.append(call_instr)
+        temp_var = self.new_temp()
         return temp_var
 
     def visit_expression(self, node):
         left = self.visit(node.left) if not isinstance(node.left, (str, int)) else node.left
         right = self.visit(node.right) if node.right and not isinstance(node.right, (str, int)) else node.right
         if node.op:
-            return Instruction(node.op, left, right)
+            temp_var = self.new_temp()
+            self.current_block.instructions.append(Instruction('assign', temp_var, Instruction(node.op, left, right)))
+            return temp_var
         else:
             return node.left
 
