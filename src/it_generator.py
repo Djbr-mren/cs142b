@@ -1,5 +1,7 @@
-from parser import Program, Declaration, Assignment, IfStatement, WhileStatement, ReturnStatement, FunctionCall, Expression
+from parser import Program, Declaration, Assignment, IfStatement, WhileStatement, ReturnStatement, \
+    FunctionCall, Expression
 from ir import IR, BasicBlock, Instruction
+
 
 class IRGenerator:
     def __init__(self):
@@ -23,17 +25,13 @@ class IRGenerator:
         return self.ir
 
     def visit_program(self, node):
-        # Initialize the first basic block
         entry_block = self.new_block()
         for decl in node.declarations:
             self.visit(decl)
         for stmt in node.statements:
             self.visit(stmt)
-        # Add branch to the first statement
-        self.current_block.instructions.append(Instruction('br', 'entry', entry_block.label))
 
     def visit_declaration(self, node):
-        # Declarations are handled separately, so we don't need to do anything here
         pass
 
     def visit_assignment(self, node):
@@ -47,8 +45,8 @@ class IRGenerator:
         false_block = self.new_block()
         end_block = self.new_block()
 
-        # Insert the branch instruction at the end of the current block
-        self.current_block.instructions.append(Instruction('br', cond, true_block.label, false_block.label))
+        self.current_block.instructions.append(
+            Instruction('br', cond, true_block.label, false_block.label))
 
         self.current_block = true_block
         for stmt in node.true_branch:
@@ -71,7 +69,8 @@ class IRGenerator:
 
         self.current_block = cond_block
         cond = self.visit(node.condition)
-        self.current_block.instructions.append(Instruction('br', cond, body_block.label, end_block.label))
+        self.current_block.instructions.append(
+            Instruction('br', cond, body_block.label, end_block.label))
 
         self.current_block = body_block
         for stmt in node.body:
@@ -94,7 +93,8 @@ class IRGenerator:
 
     def visit_expression(self, node):
         left = self.visit(node.left) if not isinstance(node.left, (str, int)) else node.left
-        right = self.visit(node.right) if node.right and not isinstance(node.right, (str, int)) else node.right
+        right = self.visit(node.right) if node.right and not isinstance(node.right,
+                                                                        (str, int)) else node.right
         if node.op:
             return Instruction(node.op, left, right)
         else:
@@ -120,9 +120,11 @@ class IRGenerator:
         else:
             raise Exception(f"Unsupported node type: {type(node)}")
 
+
 if __name__ == '__main__':
     from parser import Parser
     from tokenizer import Tokenizer
+
 
     code = """
     main
