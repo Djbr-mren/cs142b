@@ -1,5 +1,3 @@
-# src/ir_generator.py
-
 from parser import Program, Declaration, Assignment, IfStatement, WhileStatement, ReturnStatement, FunctionCall, Expression
 from ir import IR, BasicBlock, Instruction
 
@@ -92,8 +90,8 @@ class IRGenerator:
         return Instruction('call', node.func_name, *[self.visit(arg) for arg in node.args])
 
     def visit_expression(self, node):
-        left = self.visit(node.left) if not isinstance(node.left, str) else node.left
-        right = self.visit(node.right) if node.right and not isinstance(node.right, str) else node.right
+        left = self.visit(node.left) if not isinstance(node.left, (str, int)) else node.left
+        right = self.visit(node.right) if node.right and not isinstance(node.right, (str, int)) else node.right
         if node.op:
             return Instruction(node.op, left, right)
         else:
@@ -114,7 +112,7 @@ class IRGenerator:
             return self.visit_function_call(node)
         elif isinstance(node, Expression):
             return self.visit_expression(node)
-        elif isinstance(node, str):
+        elif isinstance(node, (str, int)):
             return node
         else:
             raise Exception(f"Unsupported node type: {type(node)}")
